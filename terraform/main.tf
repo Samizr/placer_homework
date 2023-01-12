@@ -21,7 +21,7 @@ resource "google_container_node_pool" "exam_cluster_nodes" {
     }
 
     preemptible  = true
-    machine_type = "e2-small"
+    machine_type = "e2-medium"
   }
 
   autoscaling {
