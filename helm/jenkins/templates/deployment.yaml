@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.name }}
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name }}
+    spec:
+      securityContext:
+            fsGroup: 1000
+            runAsUser: 1000
+      serviceAccountName: {{ .Values.name }}-admin
+      tolerations:
+        - key: "taint"
+          operator: "Equal"
+          value: "application"
+          effect: "NoSchedule"
+      containers:
+        - name: {{ .Values.name }}
+          image: {{ .Values.image.repository }}
+          env:
+          - name: JENKINS_URL
+            value: http://jenkins-leader-service
+          - name: JENKINS_TUNNEL
+            value: jenkins-leader-service:50000
+          - name: JENKINS_AGENT_NAME
+            value: node1
+          - name: JENKINS_SECRET
+            value: f287fd8321e79d4d42545fff525f0ec6ccb91328716573a7def46971d3a201bf
+          resources:
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+            requests:
+              memory: "500Mi"
+              cpu: "500m"
+        {{ if .Values.externalAccess.enabled }}
+          ports:
+            - name: httpport
+              containerPort: 8080
+            - name: jnlpport
+              containerPort: 50000
+          livenessProbe:
+            httpGet:
+              path: "/login"
+              port: 8080
+            initialDelaySeconds: 90
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: "/login"
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          {{ end }}
+      {{ if .Values.docker.enabled }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 0
+      {{ end  }}
+      {{ if .Values.storage.enabled }}
+          volumeMounts:
+            - name: {{ .Values.name }}-data
+              mountPath: /var/jenkins_home
+      {{ end }}
+      {{ if .Values.docker.enabled }}
+          volumeMounts:
+            - name: {{ .Values.name }}-docker
+              mountPath: /var/run/docker.sock
+      {{ end }}
+      {{ if .Values.storage.enabled }}
+      volumes:
+        - name: {{ .Values.name }}-data
+          persistentVolumeClaim:
+              claimName: {{ .Values.name }}-pvc
+      {{ end }}
+      {{ if .Values.docker.enabled }}
+      volumes:
+        - name: {{ .Values.name }}-docker
+          hostPath: 
+            path: /var/run/docker.sock
+            type: Socket
+      {{ end }}

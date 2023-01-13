@@ -1,0 +1,17 @@
+jenkins-leader:
+  name: jenkins-leader
+  image:
+    repository: jenkins/jenkins:lts
+  externalAccess:
+    enabled: true
+  storage:
+    enabled: true
+
+jenkins-agent:
+  name: jenkins-agent
+  image:
+    repository: gcr.io/placer-interview-lab/jenkins-agent
+  docker:
+    enabled: true
+  storage:
+    enabled: true

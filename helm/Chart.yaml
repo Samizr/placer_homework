@@ -1,0 +1,17 @@
+apiVersion: v2
+name: jenkins-bundle
+description: An umbrella chart the bundles both jenkins leaders and agents.
+type: application
+
+version: 0.1.0
+appVersion: "1"
+
+dependencies:
+  - name: jenkins
+    version: 0.1.0
+    repository: file://jenkins/
+    alias: jenkins-leader
+  - name: jenkins
+    version: 0.1.0
+    repository: file://jenkins/
+    alias: jenkins-agent
